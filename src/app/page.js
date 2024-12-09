@@ -1,4 +1,5 @@
 "use client"
+import Link from 'next/link';
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
 
@@ -110,6 +111,7 @@ const ExcelHandler = () => {
       {data.length > 0 && (
         <button onClick={handleFileDownload}>Download Excel</button>
       )}
+      by <Link target='_blank' href={'https://dishantkapoor.com'}>Dishant Kapoor</Link>
     </div>
   );
 };
