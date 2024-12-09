@@ -1,101 +1,117 @@
-import Image from "next/image";
+"use client"
+import React, { useState } from 'react';
+import * as XLSX from 'xlsx';
 
-export default function Home() {
+const ExcelHandler = () => {
+  const [data, setData] = useState([]);
+  const [headers, setHeaders] = useState([]);
+
+  // Function to handle file upload
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      const binaryStr = event.target.result;
+      const workbook = XLSX.read(binaryStr, { type: 'binary' });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+      setHeaders(jsonData[0] || []);
+      setData(jsonData.slice(1));
+    };
+
+    reader.readAsBinaryString(file);
+  };
+
+  // Function to handle file download
+  const handleFileDownload = () => {
+    // Get all input values from the table
+    const updatedData = data.map(row => 
+      headers.map((_, colIdx) => {
+        // If the cell is empty or undefined, use the previous non-empty value
+        if (row[colIdx] === '' || row[colIdx] === undefined) {
+          let lastValue = '';
+          // Look for the last non-empty value in the same column
+          for (let i = 0; i < data.length; i++) {
+            if (data[i][colIdx] !== '' && data[i][colIdx] !== undefined) {
+              lastValue = data[i][colIdx];
+            }
+            if (i >= data.indexOf(row)) break;
+          }
+          return lastValue;
+        }
+        return row[colIdx];
+      })
+    );
+
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...updatedData]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+
+    XLSX.writeFile(workbook, 'output.xlsx');
+  };
+
+  // Function to update cell data
+  const handleInputChange = (rowIdx, colIdx, value) => {
+    const updatedData = [...data];
+    updatedData[rowIdx][colIdx] = value;
+    setData(updatedData);
+  };
+  let old=""
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div style={{ padding: '20px' }}>
+      <h1>Excel Upload and Download</h1>
+      <input
+        type="file"
+        accept=".xlsx, .xls"
+        onChange={handleFileUpload}
+        style={{ marginBottom: '20px' }}
+      />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      {data.length > 0 && (
+        <table border="1" style={{ marginBottom: '20px' }}>
+          <thead>
+            <tr>
+              {headers.map((header, idx) => (
+                <th key={idx}>{header}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((row, rowIdx) => (
+              <tr key={rowIdx}>
+                {headers.map((_, colIdx) => {
+                  if(row[colIdx]!='' && row[colIdx]!=undefined){
+                    old=row[colIdx]
+                  }
+                  return(
+                  <td key={colIdx}>
+                    <input
+                      type="text"
+                      className='border border-gray-300 text-black rounded-md p-2'
+                      value={row[colIdx] || old}
+                      onChange={(e) =>
+                        handleInputChange(rowIdx, colIdx, e.target.value)
+                      }
+                    />
+                  </td>
+                  )
+                }
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      {data.length > 0 && (
+        <button onClick={handleFileDownload}>Download Excel</button>
+      )}
     </div>
   );
-}
+};
+
+export default ExcelHandler;
